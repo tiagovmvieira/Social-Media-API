@@ -1,11 +1,11 @@
 
 #import modules
 from email.policy import HTTP
-from typing import Optional
 from fastapi import FastAPI, Response, status, HTTPException, Depends
 from fastapi.params import Body
-from typing import Union
+from typing import List
 from psycopg2.extras import RealDictCursor
+from passlib.context import CryptContext
 from sqlalchemy.orm import Session
 from .database import engine, get_db
 from . import models, schemas
@@ -13,6 +13,7 @@ from . import models, schemas
 import psycopg2
 import time
 
+pwd_context = CryptContext(schemes = ["bcrypt"], deprecated = "auto")
 models.Base.metadata.create_all(bind = engine)
 
 app = FastAPI() #fastapi instantiation
@@ -36,14 +37,14 @@ while True:
 def root() -> dict:
     return {'message': 'Hello World'}
 
-@app.get('/posts')
-def get_posts(db: Session = Depends(get_db))-> dict:
+@app.get('/posts', response_model = List[schemas.PostResponse])
+def get_posts(db: Session = Depends(get_db))-> models.Post:
     posts = db.query(models.Post).all()
 
     return posts
 
-@app.post('/posts', status_code = status.HTTP_201_CREATED)
-def create_posts(post: schemas.PostCreate, db: Session = Depends(get_db))-> dict:
+@app.post('/posts', status_code = status.HTTP_201_CREATED, response_model = schemas.PostResponse)
+def create_posts(post: schemas.PostCreate, db: Session = Depends(get_db))-> models.Post:
     new_post = models.Post(**post.dict())
     db.add(new_post)
     db.commit()
@@ -51,8 +52,8 @@ def create_posts(post: schemas.PostCreate, db: Session = Depends(get_db))-> dict
 
     return new_post
 
-@app.get('/posts/{id}')
-def get_post(id: int, db: Session = Depends(get_db))-> dict:
+@app.get('/posts/{id}', response_model = schemas.PostResponse)
+def get_post(id: int, db: Session = Depends(get_db))-> models.Post:
     post = db.query(models.Post).filter(models.Post.id == id).first()
 
     if (not post):
@@ -76,8 +77,8 @@ def delete_post(id: int, db: Session = Depends(get_db))-> Response:
 
     return Response(status_code = status.HTTP_204_NO_CONTENT) #required to send the 204 status code
 
-@app.put('/posts/{id}')
-def update_post(id: int, post: schemas.PostCreate, db: Session = Depends(get_db))-> dict:
+@app.put('/posts/{id}', response_model = schemas.PostResponse)
+def update_post(id: int, post: schemas.PostCreate, db: Session = Depends(get_db))-> models.Post:
     post_query = db.query(models.Post).filter(models.Post.id == id)
     post_queried = post_query.first()
 
@@ -90,3 +91,12 @@ def update_post(id: int, post: schemas.PostCreate, db: Session = Depends(get_db)
     db.refresh(post_query.first())
 
     return post_query.first()
+
+@app.post('/users', status_code = status.HTTP_201_CREATED, response_model = schemas.UserResponse)
+def create_user(user: schemas.UserCreate, db: Session = Depends(get_db))-> models.User:
+    new_user = models.User(**user.dict())
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+
+    return new_user
