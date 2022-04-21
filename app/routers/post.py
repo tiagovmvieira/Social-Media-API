@@ -44,7 +44,6 @@ def delete_post(id: int, db: Session = Depends(get_db))-> Response:
 
     post.delete(synchronize_session = False)
     db.commit()
-    db.refresh(post.first())
 
     return Response(status_code = status.HTTP_204_NO_CONTENT) #required to send the 204 status code
 
