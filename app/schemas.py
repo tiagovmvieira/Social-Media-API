@@ -16,15 +16,13 @@ class PostResponse(PostBase):
     class Config:
         orm_mode = True
 
-class UserBase(BaseModel):
+class UserCreate(BaseModel):
     email: EmailStr
     password: str
 
-class UserCreate(UserBase):
-    pass
-
-class UserResponse(UserBase):
+class UserResponse(BaseModel):
     user_id : int
+    email: str
     created_at: datetime
 
     class Config:
