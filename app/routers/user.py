@@ -13,7 +13,7 @@ def create_user(user: schemas.UserCreate, db: Session = Depends(get_db))-> model
     
     hashed_password = utils.hash(user.password)
     user.password = hashed_password
-    
+
     new_user = models.User(**user.dict())
     db.add(new_user)
     db.commit()
@@ -27,12 +27,12 @@ def get_user(id: int, db: Session = Depends(get_db))-> models.User:
 
     if (not user):
         raise HTTPException(status_code = status.HTTP_404_NOT_FOUND,
-                            detail = 'user with user_id: {} does not exist'.format(id))
+                            detail = 'User with user_id: {} does not exist'.format(id))
 
     return user
 
 @router.delete('/{id}', status_code = status.HTTP_204_NO_CONTENT)
-def delete_post(id: int, db: Session = Depends(get_db))-> Response:
+def delete_user(id: int, db: Session = Depends(get_db))-> Response:
     user = db.query(models.User).filter(models.User.user_id == id)
 
     if (user.first() is None):
