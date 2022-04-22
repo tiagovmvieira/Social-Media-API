@@ -1,7 +1,7 @@
 from fastapi import Response, status, HTTPException, Depends, APIRouter
 from sqlalchemy.orm import Session
 from typing import List
-from .. import models, schemas
+from .. import models, schemas, oauth2
 from ..database import get_db
 
 router = APIRouter(
@@ -10,13 +10,13 @@ router = APIRouter(
 )
 
 @router.get('/', response_model = List[schemas.PostResponse])
-def get_posts(db: Session = Depends(get_db))-> models.Post:
+def get_posts(db: Session = Depends(get_db), current_user: int = Depends(oauth2.get_current_user))-> models.Post:
     posts = db.query(models.Post).all()
 
     return posts
 
 @router.post('/', status_code = status.HTTP_201_CREATED, response_model = schemas.PostResponse)
-def create_post(post: schemas.PostCreate, db: Session = Depends(get_db))-> models.Post:
+def create_post(post: schemas.PostCreate, db: Session = Depends(get_db), current_user: int = Depends(oauth2.get_current_user))-> models.Post:
     new_post = models.Post(**post.dict())
     db.add(new_post)
     db.commit()
@@ -35,7 +35,7 @@ def get_post(id: int, db: Session = Depends(get_db))-> models.Post:
     return post
 
 @router.delete('/{id}', status_code = status.HTTP_204_NO_CONTENT)
-def delete_post(id: int, db: Session = Depends(get_db))-> Response:
+def delete_post(id: int, db: Session = Depends(get_db), current_user: int = Depends(oauth2.get_current_user))-> Response:
     post = db.query(models.Post).filter(models.Post.id == id)
 
     if (post.first() is None):
@@ -48,7 +48,7 @@ def delete_post(id: int, db: Session = Depends(get_db))-> Response:
     return Response(status_code = status.HTTP_204_NO_CONTENT) #required to send the 204 status code
 
 @router.put('/{id}', response_model = schemas.PostResponse)
-def update_post(id: int, post: schemas.PostCreate, db: Session = Depends(get_db))-> models.Post:
+def update_post(id: int, post: schemas.PostCreate, db: Session = Depends(get_db), current_user: int = Depends(oauth2.get_current_user))-> models.Post:
     post_query = db.query(models.Post).filter(models.Post.id == id)
     post_queried = post_query.first()
 
