@@ -18,7 +18,7 @@ def create_user(user: schemas.UserCreate, db: Session = Depends(get_db))-> model
     users = db.query(models.Post).all()
 
     if (new_user in users):
-        raise HTTPException(status_code = status.HTTP_401,
+        raise HTTPException(status_code = status.HTTP_400_BAD_REQUEST,
                             detail = 'User with email: {} is already registed'.format(user.email))
 
     db.add(new_user)
@@ -49,5 +49,3 @@ def delete_user(id: int, db: Session = Depends(get_db))-> Response:
     db.commit()
 
     return Response(status_code = status.HTTP_204_NO_CONTENT) #required to send the 204 status code
-
-
