@@ -1,7 +1,7 @@
 #import modules
 from fastapi import Response, status, HTTPException, Depends, APIRouter
 from sqlalchemy.orm import Session
-from typing import List
+from typing import Optional, List
 
 from .. import models, schemas, oauth2
 from ..database import get_db
@@ -12,14 +12,15 @@ router = APIRouter(
 )
 
 @router.get('/', response_model = List[schemas.PostResponse])
-def get_posts(db: Session = Depends(get_db), current_user: int = Depends(oauth2.get_current_user))-> models.Post:
-    posts = db.query(models.Post).all()
+def get_posts(db: Session = Depends(get_db), current_user: int = Depends(oauth2.get_current_user),
+limit: int = 10, skip: int = 0, search: Optional[str] = '')-> models.Post:
+    posts = db.query(models.Post).filter(models.Post.title.contains(search)).limit(limit).offset(skip).all()
 
     return posts
 
 @router.post('/', status_code = status.HTTP_201_CREATED, response_model = schemas.PostResponse)
 def create_post(post: schemas.PostCreate, db: Session = Depends(get_db), current_user: int = Depends(oauth2.get_current_user))-> models.Post:
-    new_post = models.Post(owner_id = current_user.id, **post.dict())
+    new_post = models.Post(owner_id = current_user.user_id, **post.dict())
     db.add(new_post)
     db.commit()
     db.refresh(new_post)
@@ -27,14 +28,14 @@ def create_post(post: schemas.PostCreate, db: Session = Depends(get_db), current
     return new_post
 
 @router.get('/{id}', response_model = schemas.PostResponse)
-def get_post(id: int, db: Session = Depends(get_db), user_id: int = Depends(oauth2.get_current_user))-> models.Post:
+def get_post(id: int, db: Session = Depends(get_db), current_user: int = Depends(oauth2.get_current_user))-> models.Post:
     post = db.query(models.Post).filter(models.Post.id == id).first()
 
     if (not post):
         raise HTTPException(status_code = status.HTTP_404_NOT_FOUND,
                             detail = 'post with id: {} was not found'.format(id))
     
-    if (post.owner_id != user_id.user.id):
+    if (post.owner_id != current_user.user_id):
         raise HTTPException(status_code = status.HTTP_403_FORBIDDEN,
                             detail = 'Not authorized to perform requested action')
 
@@ -49,11 +50,11 @@ def delete_post(id: int, db: Session = Depends(get_db), current_user: int = Depe
         raise HTTPException(status_code = status.HTTP_404_NOT_FOUND,
                             detail = 'post with id: {} does not exist'.format(id))
 
-    if (post_queried.owner_id != current_user.id):
+    if (post_queried.owner_id != current_user.user_id):
         raise HTTPException(status_code = status.HTTP_403_FORBIDDEN,
                             detail = 'Not authorized to perform requested action')
 
-    post_queried.delete(synchronize_session = False)
+    post_query.delete(synchronize_session = False)
     db.commit()
 
     return Response(status_code = status.HTTP_204_NO_CONTENT) #required to send the 204 status code
@@ -67,7 +68,7 @@ def update_post(id: int, post: schemas.PostCreate, db: Session = Depends(get_db)
         raise HTTPException(status_code = status.HTTP_404_NOT_FOUND,
                             detail = 'post with id: {} does not exist'.format(id))
     
-    if (post.owner_id != current_user.id):
+    if (post.owner_id != current_user.user_id):
         raise HTTPException(status_code = status.HTTP_403_FORBIDDEN,
                             detail = 'Not authorized to perform requested action')
 
