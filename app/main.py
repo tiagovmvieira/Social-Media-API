@@ -13,29 +13,26 @@ from .routers import post, user, auth
 import psycopg2
 import time
 
-def main():
-    models.Base.metadata.create_all(bind = engine)
 
-    app = FastAPI() #fastapi instantiation
+models.Base.metadata.create_all(bind = engine)
 
-    while True:
-        try:
-            conn = psycopg2.connect(host = 'localhost',
-                                    database = 'Social_Media_FASTAPI',
-                                    user = 'tiagovieira',
-                                    password = 'password123',
-                                    cursor_factory = RealDictCursor)
-            cursor = conn.cursor()
-            print('Database Connection was sucessfull!')
-            break
-        except Exception as error:
-            print('Connection to database failed')
-            print('Error:', error)
-            time.sleep(3)
+app = FastAPI() #fastapi instantiation
 
-    app.include_router(post.router)
-    app.include_router(user.router)
-    app.include_router(auth.router)
+while True:
+    try:
+        conn = psycopg2.connect(host = 'localhost',
+                                database = 'Social_Media_FASTAPI',
+                                user = 'tiagovieira',
+                                password = 'password123',
+                                cursor_factory = RealDictCursor)
+        cursor = conn.cursor()
+        print('Database Connection was sucessfull!')
+        break
+    except Exception as error:
+        print('Connection to database failed')
+        print('Error:', error)
+        time.sleep(3)
 
-if __name__ == '__main__':
-    main()
+app.include_router(post.router)
+app.include_router(user.router)
+app.include_router(auth.router)
