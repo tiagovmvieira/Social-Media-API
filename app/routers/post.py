@@ -8,6 +8,8 @@ from typing import Optional, List
 from .. import models, schemas, oauth2
 from ..database import get_db
 
+import sqlalchemy
+
 router = APIRouter(
     prefix = '/posts',
     tags = ['Posts']
@@ -33,11 +35,12 @@ def create_post(post: schemas.PostCreate, db: Session = Depends(get_db), current
     return new_post
 
 @router.get('/{id}', response_model = schemas.PostOut)
-def get_post(id: int, db: Session = Depends(get_db), current_user: int = Depends(oauth2.get_current_user))-> models.Post:
+def get_post(id: int, db: Session = Depends(get_db), current_user: int = Depends(oauth2.get_current_user))-> sqlalchemy.engine.row.Row:
     post = db.query(models.Post, func.count(models.Vote.post_id).label('votes')).join(
         models.Vote, models.Vote.post_id == models.Post.id, isouter = True).group_by(models.Post.id).filter(
-        models.Post.id == id).first()
-
+        models.Post.id == id)
+        #.first()
+    print(post)
     if (not post):
         raise HTTPException(status_code = status.HTTP_404_NOT_FOUND,
                             detail = 'post with id: {} was not found'.format(id))
@@ -45,7 +48,7 @@ def get_post(id: int, db: Session = Depends(get_db), current_user: int = Depends
     #if (post.owner_id != current_user.user_id):
     #    raise HTTPException(status_code = status.HTTP_403_FORBIDDEN,
     #                        detail = 'Not authorized to perform requested action')
-
+    print(type(post))
     return post
 
 @router.delete('/{id}', status_code = status.HTTP_204_NO_CONTENT)
@@ -67,7 +70,7 @@ def delete_post(id: int, db: Session = Depends(get_db), current_user: int = Depe
     return Response(status_code = status.HTTP_204_NO_CONTENT) #required to send the 204 status code
 
 @router.put('/{id}', response_model = schemas.PostResponse)
-def update_post(id: int, post: schemas.PostCreate, db: Session = Depends(get_db), current_user: int = Depends(oauth2.get_current_user))-> models.Post:
+def update_post(id: int, post: schemas.PostCreate, db: Session = Depends(get_db), current_user: int = Depends(oauth2.get_current_user))-> sqlalchemy.engine.row.Row:
     post_query = db.query(models.Post).filter(models.Post.id == id)
     post_queried = post_query.first()
 
@@ -82,5 +85,5 @@ def update_post(id: int, post: schemas.PostCreate, db: Session = Depends(get_db)
     post_query.update(post.dict(), synchronize_session = False)
     db.commit()
     db.refresh(post_query.first())
-    print(type(post_query.fitst()))
+    print(type(post_query.first()))
     return post_query.first()
