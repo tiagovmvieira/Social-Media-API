@@ -44,12 +44,26 @@ def client(database_session):
 
 
 @pytest.fixture
+def test_user2(client):
+    user_data = {'email': 'hello1234@gmail.com',
+                'password': 'password123'}
+    res = client.post('/users/', json = user_data)
+
+    assert res.status_code == 201
+
+    new_user = res.json()
+    new_user['password'] = user_data['password']
+    return new_user
+
+
+@pytest.fixture
 def test_user(client):
     user_data = {'email' : 'hello123@gmail.com',
                 'password' : 'password123'}
     res = client.post('/users/', json = user_data)
     
-    assert res.status_code == 201 
+    assert res.status_code == 201
+
     new_user = res.json()
     new_user['password'] = user_data['password']
     return new_user
@@ -71,7 +85,7 @@ def authorized_client(client, token):
 
 
 @pytest.fixture
-def test_posts(test_user, database_session)-> list:
+def test_posts(test_user, test_user2, database_session,)-> list:
     posts_data = [
         {
             'title': 'Title Post A',
@@ -87,6 +101,11 @@ def test_posts(test_user, database_session)-> list:
             'title': 'Title Post C',
             'content': 'Content Post C',
             'owner_id': test_user['user_id']
+        },
+        {
+            'title': 'Title Post D',
+            'content': 'Content Post D',
+            'owner_id': test_user2['user_id']
         }
     ]
 
