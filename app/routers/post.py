@@ -66,7 +66,7 @@ def delete_post(id: int, db: Session = Depends(get_db), current_user: int = Depe
     return Response(status_code = status.HTTP_204_NO_CONTENT) #required to send the 204 status code
 
 @router.put('/{id}', response_model = schemas.PostResponse)
-def update_post(id: int, post: schemas.PostCreate, db: Session = Depends(get_db), current_user: int = Depends(oauth2.get_current_user))-> sqlalchemy.engine.row.Row:
+def update_post(id: int, post: schemas.PostCreate, db: Session = Depends(get_db), current_user: int = Depends(oauth2.get_current_user))-> models.Post:
     post_query = db.query(models.Post).filter(models.Post.id == id)
     post_queried = post_query.first()
 
@@ -81,5 +81,4 @@ def update_post(id: int, post: schemas.PostCreate, db: Session = Depends(get_db)
     post_query.update(post.dict(), synchronize_session = False)
     db.commit()
     db.refresh(post_query.first())
-    print(type(post_query.first()))
     return post_query.first()
