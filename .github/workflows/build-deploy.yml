@@ -9,7 +9,7 @@ jobs:
       - name: pulling git repo
         uses: actions/checkout@v2
       # Setup Python
-      - name: Install python version 3.9
+      - name: install python version 3.9
         uses: actions/setup-python@v2
         with:
           python-version: "3.9"
@@ -19,3 +19,8 @@ jobs:
       # Install Requirements
       - name: install requirements
         run: pip install -r requirements.txt
+      # Run Tests with Pytest
+      - name: test with pytest
+        run:
+          pip install pytest
+          pytest -v -s
